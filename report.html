@@ -1,0 +1,218 @@
+﻿<html>
+<head>
+     <title>Report CryptoTrader</title>
+     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+ 
+
+<script>
+jQuery.support.cors = true;
+
+var proxys = ["http://btcnow.site/report/proxy.php?url=", "http://portaldivertido.com/proxy.php?url=", "http://portaldivertido.com/proxy.php?url=","http://btcnow.site/report/proxy.php?url=","http://portaldivertido.com/proxy.php?url="];
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getProxyRandom()
+{
+	return proxys[getRandomInt(0,4)];
+}
+
+function showPriceBTC()
+{
+	 $.getJSON("https://blockchain.info/pt/ticker", function(data, status){
+		 $("#priceBTCUSD").html("USD $  " + data["USD"]["last"] + " (BlockChain)");
+	 	 $("#priceBTCBRL").html("BRL R$ " + data["BRL"]["last"]+ " (BlockChain)");
+    });	
+
+	 $.getJSON("https://www.mercadobitcoin.net/api/BTC/ticker/", function(data, status){
+		 $("#priceMB").html("BRL R$ " + data["ticker"]["last"] + " (Mercado Bitcoin)");
+    });	
+
+	 $.getJSON("https://api.coindesk.com/v1/bpi/currentprice.json", function(data, status){
+		 $("#priceCoinDesk").html("USD $ " + data["bpi"]["USD"]["rate"] + " (CoinDesk)");
+    });	
+}
+
+function getPriceBittrex(coin)
+{
+	try
+	{
+		 $.getJSON(getProxyRandom() + "https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-" + coin.toLowerCase(), function(data, status){
+			 $("#bittrex" + coin).html(data["result"][0]["Last"]);
+	    });	
+	}
+	catch(err)
+	{
+		return "0";
+	}
+	 
+}
+
+function getPriceBitfinex(coin)
+{
+	try
+	{
+	$.getJSON(getProxyRandom() +"http://portaldivertido.com/proxy.php?url=https://api.bitfinex.com/v1/pubticker/" + coin.toLowerCase() + "btc", function(data, status){
+			 $("#bitfinex" + coin + "btc").html(data["last_price"]);
+	    });	
+	}
+	catch(err)
+	{
+		return "0";
+	}
+	 
+}
+
+function getPriceBitstamp(coin)
+{
+	try
+	{
+		 $.getJSON(getProxyRandom() + "https://www.bitstamp.net/api/v2/ticker/" + coin.toLowerCase() + "btc", function(data, status){
+			 $("#bitstamp" + coin + "btc").html(data["last"]);
+	    });	
+	}
+	catch(err)
+	{
+		return "0";
+	}
+	 
+}
+
+function populateBinance()
+{
+	try
+	{
+		 $.getJSON("http://portaldivertido.com/proxy.php?url=https://api.binance.com/api/v3/ticker/price", function(data, status){
+		for (var i =0; i <= Object.keys(data).length - 1; i++) {
+			try
+			{
+				$("#binance" + data[i]["symbol"]).html(data[i]["price"]);
+			}
+			catch(err)
+			{
+
+			}
+	}
+	    });	
+	}
+	catch(err)
+	{
+		return "0";
+	}
+	 
+}
+
+
+function populateCoinMarketCap()
+{
+	$.getJSON(getProxyRandom() + "https://api.coinmarketcap.com/v1/ticker/?limit=999999", function(data, status){
+	   for (var i =0; i <= Object.keys(data).length - 1; i++) {
+			try
+			{
+				$("#coinmarketcap" + data[i]["symbol"]).html( data[i]["price_btc"]);
+			}
+			catch(err)
+			{
+
+			}
+	}
+	});
+}
+
+function populatePoloniex()
+{
+
+	$.getJSON("https://poloniex.com/public?command=returnTicker", function(data, status){
+	   for (var i =0; i <= Object.keys(data).length - 1; i++) {
+
+		
+
+		if(Object.keys(data)[i].indexOf("BTC_") >= 0)
+		{
+			try
+			{
+				$("#poloniex" + String(Object.keys(data)[i]).split("_")[1]).html( data[Object.keys(data)[i]]["last"]);
+				getPriceBitfinex(String(Object.keys(data)[i]).split("_")[1]);
+				getPriceBittrex(String(Object.keys(data)[i]).split("_")[1]);
+				getPriceBitstamp(String(Object.keys(data)[i]).split("_")[1]);
+				if(data[Object.keys(data)[i]]["last"] >= data[Object.keys(data)[i]]["high24hr"])
+				{
+					$("#info" + String(Object.keys(data)[i]).split("_")[1]).html("PUMP");
+				}
+				if(data[Object.keys(data)[i]]["last"] <= data[Object.keys(data)[i]]["low24hr"])
+				{
+					$("#info" + String(Object.keys(data)[i]).split("_")[1]).html("DUMP");
+				}
+			}
+
+			catch(err)
+			{
+
+			}
+		}
+
+		
+	}
+	});
+}
+
+function mountGrid()
+{
+	$.getJSON("https://poloniex.com/public?command=returnTicker", function(data, status){
+
+	var html = "<table border=1 width='100%'><tr><td>Coin</td><td>Polinex</td><td>BitTrex</td><td>CoinMarketCap</td><td>Binance</td><td>Bitstamp</td><td>Bitfinex</td><td>Info</td><tr/>";
+	for (var i =0; i <= Object.keys(data).length - 1; i++) {
+
+		
+
+		if(Object.keys(data)[i].indexOf("BTC_") >= 0)
+		{
+			try
+			{
+				html += "<tr>";
+				html += "<td>" + Object.keys(data)[i] + "</td>";
+				html += "<td><div id='poloniex"+String(Object.keys(data)[i]).split("_")[1]+"'></div></td>";
+				html += "<td><div id='bittrex"+String(Object.keys(data)[i]).split("_")[1]+"'></div></td>";
+				html += "<td><div id='coinmarketcap"+String(Object.keys(data)[i]).split("_")[1]+"'></div></td>";
+				html += "<td><div id='binance"+String(Object.keys(data)[i]).split("_")[1]+"BTC'></div></td>";
+				html += "<td><div id='bitstamp"+String(Object.keys(data)[i]).split("_")[1]+"btc'></div></td>";
+				html += "<td><div id='bitfinex"+String(Object.keys(data)[i]).split("_")[1]+"btc'></div></td>";
+				html += "<td><div id='info"+String(Object.keys(data)[i]).split("_")[1]+"'></div></td>";
+				html += "</tr>";
+			}
+			catch(err)
+			{
+
+			}
+		}
+
+		
+	}
+	 html += "</table>";
+	 $("#grid").html(html);
+
+    });
+}
+</script>
+</head>
+ <body>
+
+    <div id="priceBTCUSD"></div>
+    <div id="priceBTCBRL"></div>
+    <div id="priceMB"></div>
+    <div id="priceCoinDesk"></div>
+
+      <div id="grid" width="100%">Loading...</div>
+
+   <script type="text/javascript">
+   			mountGrid();
+   			setInterval(function () {
+   				showPriceBTC();
+   				populatePoloniex();
+   				populateCoinMarketCap();
+   				populateBinance();
+   				}, 1000);
+   </script>
+ </body>
+</html>
